@@ -6,8 +6,6 @@ import ManualCalculation from "./components/ManualCalculation";
 import { calculateCorrelationDetailed } from "./utils/calculateCorrelation";
 
 const App: React.FC = () => {
-  const [x, setX] = useState<number[]>([]);
-  const [y, setY] = useState<number[]>([]);
   const [result, setResult] = useState<{
     correlation: number | null;
     pValue: number | null;
@@ -15,43 +13,60 @@ const App: React.FC = () => {
     details: any;
   }>({ correlation: null, pValue: null, significant: null, details: {} });
 
-  const handleCalculate = () => {
-    if (x.length !== y.length || x.length === 0) {
-      alert("Datasets must have the same length and not be empty.");
-      return;
-    }
+  const handleDataSubmit = (x: number[], y: number[]) => {
     const correlationResult = calculateCorrelationDetailed(x, y);
     setResult(correlationResult);
+  };
+  const isDetailsComplete = (
+    details: any
+  ): details is {
+    meanX: number;
+    meanY: number;
+    numerator: number;
+    denominator: number;
+    deviationsX: number[];
+    deviationsY: number[];
+    squaredDeviationsX: number[];
+    squaredDeviationsY: number[];
+    products: number[];
+  } => {
+    return (
+      details &&
+      typeof details.meanX === "number" &&
+      typeof details.meanY === "number" &&
+      typeof details.numerator === "number" &&
+      typeof details.denominator === "number" &&
+      Array.isArray(details.deviationsX) &&
+      Array.isArray(details.deviationsY) &&
+      Array.isArray(details.squaredDeviationsX) &&
+      Array.isArray(details.squaredDeviationsY) &&
+      Array.isArray(details.products)
+    );
   };
 
   return (
     <div style={{ fontFamily: "Arial, sans-serif", padding: "20px" }}>
-      <DataInput onChangeX={setX} onChangeY={setY} />
-      <div style={{ textAlign: "center" }}>
-        <button
-          onClick={handleCalculate}
-          style={{
-            padding: "10px 20px",
-            margin: "10px",
-            fontSize: "16px",
-            cursor: "pointer",
-          }}
-        >
-          Calculate Correlation
-        </button>
-      </div>
-      <CorrelationResult
-        correlation={result.correlation}
-        pValue={result.pValue}
-        significant={result.significant}
-      />
-
-      {x.length && y.length && x.length === y.length && result.details ? (
+      <DataInput onSubmit={handleDataSubmit} />
+      {result.correlation !== null && (
         <>
-          <ScatterPlot data={x.map((xi, i) => ({ x: xi, y: y[i] }))} />
-          <ManualCalculation details={result.details} />
+          <CorrelationResult
+            correlation={result.correlation}
+            pValue={result.pValue}
+            significant={result.significant}
+          />
+          {isDetailsComplete(result.details) && (
+            <>
+              <ScatterPlot
+                data={result.details.deviationsX.map((_, i) => ({
+                  x: result.details.deviationsX[i] + result.details.meanX,
+                  y: result.details.deviationsY[i] + result.details.meanY,
+                }))}
+              />
+              <ManualCalculation details={result.details} />
+            </>
+          )}
         </>
-      ) : null}
+      )}
     </div>
   );
 };
