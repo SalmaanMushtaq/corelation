@@ -45,6 +45,7 @@ const App: React.FC = () => {
         pValue={result.pValue}
         significant={result.significant}
       />
+
       {x.length && y.length && x.length === y.length && result.details ? (
         <>
           <ScatterPlot data={x.map((xi, i) => ({ x: xi, y: y[i] }))} />

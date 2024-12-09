@@ -66,6 +66,8 @@
 //     },
 //   };
 // }
+
+// @ts-ignore
 import { jStat } from "jstat";
 
 export function calculateCorrelationDetailed(
@@ -137,12 +139,34 @@ export function calculateCorrelationDetailed(
     };
   }
 
+  // Handle perfect correlations
+  if (correlation === 1 || correlation === -1) {
+    return {
+      correlation,
+      pValue: 0, // Perfect correlations are always highly significant
+      significant: true,
+      details: {
+        meanX,
+        meanY,
+        numerator,
+        denominator,
+        deviationsX,
+        deviationsY,
+        squaredDeviationsX,
+        squaredDeviationsY,
+        products,
+      },
+    };
+  }
+
   // Compute the t-statistic
   const tStatistic =
     (correlation * Math.sqrt(n - 2)) / Math.sqrt(1 - correlation ** 2);
 
-  // Compute the p-value
-  const pValue = 2 * (1 - jStat.studentt.cdf(Math.abs(tStatistic), n - 2));
+  // Compute the p-value using jStat
+  const degreesOfFreedom = n - 2;
+  const pValue =
+    2 * (1 - jStat.studentt.cdf(Math.abs(tStatistic), degreesOfFreedom));
 
   // Determine significance
   const alpha = 0.05; // Significance level
